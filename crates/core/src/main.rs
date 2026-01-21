@@ -1,3 +1,6 @@
+use core::identity::Identity;
+
 fn main() {
-    println!("Hello, world!");
+    let id = Identity::generate();
+    print!("Id: {:?}", id.peer_id());
 }
