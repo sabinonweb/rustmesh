@@ -1,0 +1,10 @@
+[package]
+name = "core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ed25519-dalek = "2"
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+hex = "0.4"
