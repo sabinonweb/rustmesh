@@ -31,3 +31,16 @@ async fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+async fn client() -> Result<()> {
+    let my_id = Identity::generate();
+    println!("Client Peer ID: {}", my_id.peer_id());
+
+    let endpoint = Endpoint::client("0.0.0.0".parse()?).unwrap();
+    let server_addr: SocketAddr = "127.0.0.1:8080".parse()?;
+    let connection = endpoint.connect(server_addr, "localhost")?;
+
+    println!("Connected to {:?}", connection.remote_address());
+
+    Ok(())
+}
