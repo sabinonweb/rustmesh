@@ -1,6 +1,8 @@
-use quinn::{Endpoint, ServerConfig, TransportConfig};
+use core::identity::Identity;
+use quinn::{Connection, Endpoint, ServerConfig, TransportConfig};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use std::{error::Error, sync::Arc};
+use tokio::io::AsyncReadExt;
 
 fn configure_server() -> Result<(ServerConfig, Vec<u8>), Box<dyn Error>> {
     let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()])?;
@@ -23,6 +25,7 @@ fn configure_server() -> Result<(ServerConfig, Vec<u8>), Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let my_id = Identity::generate();
     // let _ = rustls::crypto::ring::default_provider().install_default();
     let address = "127.0.0.1:8080".parse()?;
 
@@ -32,14 +35,15 @@ async fn main() -> anyhow::Result<()> {
     println!("Server listening on {}", address);
 
     while let Some(incoming) = endpoint.accept().await {
+        let value = my_id.clone();
+
         println!("Connection incoming from {}", incoming.remote_address());
 
         tokio::spawn(async move {
             match incoming.await {
                 Ok(connection) => {
                     println!("Connection established: {:?}", connection.remote_address());
-                    tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
-                    println!("Connection closed");
+                    tokio::spawn(handle_connection(connection, value.clone()));
                 }
                 Err(e) => {
                     eprintln!("Connection error: {:?}", e);
@@ -49,4 +53,23 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+async fn handle_connection(connection: Connection, my_id: Identity) {
+    if let Ok((mut send, mut recv)) = connection.accept_bi().await {
+        let mut buf = vec![0; 1024];
+        if let Ok(n) = recv.read(&mut buf).await {
+            let n = n.unwrap();
+            let message = String::from_utf8_lossy(&buf[..n]);
+            println!("Message from client: {:?}", message);
+
+            let reply = format!("{} says hello to you!", my_id.peer_id());
+            let _ = send.write_all(reply.as_bytes()).await;
+
+            let mut buf = vec![0; 1024];
+            let n = recv.read(&mut buf).await.unwrap().unwrap();
+            let reply = String::from_utf8_lossy(&buf[..n]);
+            println!("Reply: {:?}", reply);
+        }
+    }
 }

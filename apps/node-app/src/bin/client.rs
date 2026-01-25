@@ -70,5 +70,14 @@ async fn main() -> anyhow::Result<()> {
     let connection = endpoint.connect(server_addr, "localhost")?.await?;
     println!("Connected to {:?}", connection.remote_address());
 
+    let (mut send, mut recv) = connection.open_bi().await?;
+    let message = format!("Hello from client {}", my_id.peer_id());
+    send.write_all(message.as_bytes()).await?;
+
+    let mut buf = vec![0; 1024];
+    let n = recv.read(&mut buf).await.unwrap().unwrap();
+    let reply = String::from_utf8_lossy(&buf[..n]);
+    println!("Reply: {:?}", reply);
+
     Ok(())
 }
