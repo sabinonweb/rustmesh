@@ -18,8 +18,6 @@ fn configure_server() -> Result<(ServerConfig, Vec<u8>), Box<dyn Error>> {
     let mut config = ServerConfig::with_single_cert(vec![certificate], private_key)?;
     config.transport = transport_config;
 
-    std::fs::write("cert.pem", &cert.cert.pem())?;
-
     Ok((config, cert_der.to_vec()))
 }
 
