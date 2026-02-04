@@ -1,17 +1,15 @@
 use core::identity::Identity;
+use std::{sync::Arc, time::Duration};
+
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use quinn::Endpoint;
 use rustls::pki_types::CertificateDer;
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
 
 #[derive(Clone, Debug)]
 struct Peer {
     id: Identity,
     ip: String,
-    port: u16,
+    port: u16
 }
 
 #[derive(Debug)]
@@ -56,44 +54,37 @@ impl rustls::client::danger::ServerCertVerifier for SkipServerVerification {
     }
 }
 
-fn discover_services() -> Result<Peer, String> {
+fn discover_services() {
     let mdns = ServiceDaemon::new().expect("Failed to create daemon");
-    let my_id = Identity::generate();
+
     let service_type = "_mdns-sd-my-test._udp.local.";
     let receiver = mdns.browse(service_type).expect("Failed to browse");
-    let result = Arc::new(Mutex::new(None));
-    let result_clone = Arc::clone(&result);
 
     std::thread::spawn(move || {
         while let Ok(event) = receiver.recv() {
-            if let ServiceEvent::ServiceResolved(resolved) = event {
-                println!("Resolved a full service: {}", resolved.fullname);
-                if let Some(ip) = resolved.get_addresses().iter().next() {
-                    let mut result = result_clone.lock().unwrap();
-                    *result = Some(Ok(Peer {
-                        id: my_id.clone(),
-                        ip: ip.to_string(),
-                        port: resolved.port,
-                    }));
-                    break; // stop after first resolved peer
+            match event {
+                ServiceEvent::ServiceResolved(resolved) => {
+                    println!("Resolved a full service: {}", resolved.fullname);
+                    let ip = resolved.get_addresses()[0].to_string();
                 }
-            } else {
-                println!("Ignoring event: {:?}", event);
+                other_event => {
+                    println!("Received other event: {:?}", &other_event);
+                }
             }
         }
     });
+
     std::thread::sleep(Duration::from_secs(10));
     mdns.shutdown().unwrap();
-
-    result.lock().unwrap().clone().unwrap()
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let peer = discover_services().expect("Failed to retrive peer");
+    discover_services();
     let _ = rustls::crypto::ring::default_provider().install_default();
 
-    println!("Client Peer ID: {}", peer.id.peer_id());
+    let my_id = Identity::generate();
+    println!("Client Peer ID: {}", my_id.peer_id());
 
     let client_config = rustls::ClientConfig::builder()
         .dangerous()
@@ -113,8 +104,7 @@ async fn main() -> anyhow::Result<()> {
     println!("Connected to {:?}", connection.remote_address());
 
     let (mut send, mut recv) = connection.open_bi().await?;
-    let message = format!("Hello from client {}", peer.id.peer_id());
-
+    let message = format!("Hello from client {}", my_id.peer_id());
     send.write_all(message.as_bytes()).await?;
 
     let mut buf = vec![0; 1024];

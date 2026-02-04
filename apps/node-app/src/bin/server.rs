@@ -1,8 +1,37 @@
 use core::identity::Identity;
+use mdns_sd::{ServiceDaemon, ServiceInfo};
 use quinn::{Connection, Endpoint, ServerConfig, TransportConfig};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use std::{error::Error, sync::Arc};
 use tokio::io::AsyncReadExt;
+
+fn register_service() -> Identity {
+    let mdns = ServiceDaemon::new().expect("Failed to create a daemon");
+    let service_type = "_mdns-sd-my-test._udp.local.";
+    let peer_id = Identity::generate();
+    let ip = "127.0.0.1"; // localhost
+    let host_name = "localhost.local.";
+    let port = 8080;
+    let properties = [("property_1", "test"), ("property_2", "1234")];
+
+    let my_service = ServiceInfo::new(
+        service_type,
+        &peer_id.peer_id()[..10],
+        host_name,
+        ip,
+        port,
+        &properties[..],
+    )
+    .unwrap();
+
+    mdns.register(my_service)
+        .expect("Failed to register the service");
+
+    std::thread::sleep(std::time::Duration::from_secs(10));
+    mdns.shutdown().unwrap();
+
+    peer_id
+}
 
 fn configure_server() -> Result<(ServerConfig, Vec<u8>), Box<dyn Error>> {
     let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()])?;
@@ -23,7 +52,7 @@ fn configure_server() -> Result<(ServerConfig, Vec<u8>), Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let my_id = Identity::generate();
+    let my_id = register_service();
     // let _ = rustls::crypto::ring::default_provider().install_default();
     let address = "127.0.0.1:8080".parse()?;
 
