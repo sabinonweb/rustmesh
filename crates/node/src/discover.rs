@@ -1,4 +1,5 @@
-use core::identity::{Identity, Peer};
+use crate::add_peer;
+use core::identity::{Identity, Peer, PeerTable};
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use std::{
     sync::{Arc, Mutex},
@@ -17,15 +18,23 @@ pub fn discover_services() -> Result<Peer, String> {
         while let Ok(event) = receiver.recv() {
             if let ServiceEvent::ServiceResolved(resolved) = event {
                 println!("Resolved a full service: {}", resolved.fullname);
-                let peer_id = resolved.get_property_val_str("peer_id").unwrap();
-                println!("Service resolved from the peer: {:?}\n", peer_id);
+                let peer: Peer = resolved.get_property_val_str("peer").unwrap().into();
+                println!("Service resolved from the peer: {:?}\n", peer);
+                let peer_identity = Identity::identity(peer.id.to_string());
+
+                if peer_identity == my_id {
+                    continue;
+                }
+
+                add_peer(peer);
 
                 if let Some(ip) = resolved.get_addresses().iter().next() {
                     let mut result = result_clone.lock().unwrap();
                     *result = Some(Ok(Peer {
-                        id: my_id.clone(),
+                        id: my_id.clone().encode(),
                         ip: ip.to_string(),
                         port: resolved.port,
+                        connection: None,
                     }));
                     break; // stop after first resolved peer
                 }

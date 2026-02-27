@@ -1,12 +1,18 @@
-use crate::{discover::discover_services, skip::SkipServerVerification};
+use crate::{
+    config::configure_server, discover::discover_services, handler::handle_incoming_connection,
+    register::register_service, skip::SkipServerVerification,
+};
+use clap::Parser;
+use core::args::Args;
+use core::identity::PeerTable;
 use quinn::Endpoint;
 use std::sync::Arc;
 
-pub async fn connect_to_peer() -> anyhow::Result<quinn::Connection> {
-    let peer = discover_services().expect("Failed to retrive peer");
+pub async fn connect_to_peer(peer_table: PeerTable) -> anyhow::Result<quinn::Connection> {
+    let mut peer = discover_services(peer_table).expect("Failed to retrive peer");
     let _ = rustls::crypto::ring::default_provider().install_default();
 
-    println!("Client Peer ID: {}", peer.id.peer_id());
+    println!("Client Peer ID: {}", peer.encode());
 
     let client_config = rustls::ClientConfig::builder()
         .dangerous()
@@ -24,6 +30,39 @@ pub async fn connect_to_peer() -> anyhow::Result<quinn::Connection> {
     println!("Connecting to {}...", server_addr);
 
     let connection = endpoint.connect(server_addr, "localhost")?.await?;
+    peer.connection = Some(connection);
     println!("Connected to {:?}", connection.remote_address());
     Ok(connection)
+}
+
+pub async fn server() -> anyhow::Result<()> {
+    let my_id = register_service();
+    let args = Args::parse();
+    // let _ = rustls::crypto::ring::default_provider().install_default();
+    let address = format!("{}:{}", args.ip, args.port).parse()?;
+
+    let (server_config, _cert) = configure_server().unwrap();
+
+    let endpoint = Endpoint::server(server_config, address)?;
+    println!("Server listening on {}", address);
+
+    while let Some(incoming) = endpoint.accept().await {
+        let value = my_id.clone();
+
+        println!("Connection incoming from {}", incoming.remote_address());
+
+        tokio::spawn(async move {
+            match incoming.await {
+                Ok(connection) => {
+                    println!("Connection established: {:?}", connection.remote_address());
+                    tokio::spawn(receive_handle_connection(connection, value.clone()));
+                }
+                Err(e) => {
+                    eprintln!("Connection error: {:?}", e);
+                }
+            }
+        });
+    }
+
+    Ok(())
 }

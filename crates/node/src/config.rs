@@ -1,7 +1,11 @@
+use crate::GLOBAL_PEER_TABLE;
+use core::identity::Peer;
 use quinn::Endpoint;
 use quinn::{ServerConfig, TransportConfig};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use std::{error::Error, sync::Arc};
+
+use crate::skip::SkipServerVerification;
 
 pub fn configure_server() -> Result<(ServerConfig, Vec<u8>), Box<dyn Error>> {
     let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()])?;

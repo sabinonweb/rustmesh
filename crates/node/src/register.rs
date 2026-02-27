@@ -1,15 +1,21 @@
 use core::identity::Identity;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 
-fn register_service() -> Identity {
+pub fn register_service() -> Identity {
     let mdns = ServiceDaemon::new().expect("Failed to create a daemon");
     let service_type = "_mdns-sd-my-test._udp.local.";
     let peer_id = Identity::generate();
     let ip = "127.0.0.1"; // localhost
     let host_name = "localhost.local.";
     let port = 8080;
+    let peer = Peer {
+        id: peer_id,
+        ip,
+        port,
+        connection: None,
+    };
     let properties = [
-        ("peer_id", peer_id.peer_id()),
+        ("peer", peer),
         ("property_1", "test".to_string()),
         ("property_2", "1234".to_string()),
     ];

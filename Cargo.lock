@@ -227,6 +227,8 @@ dependencies = [
  "clap",
  "ed25519-dalek",
  "hex",
+ "once_cell",
+ "quinn",
  "rand 0.8.5",
  "serde",
 ]
@@ -609,6 +611,7 @@ dependencies = [
  "clap",
  "core",
  "mdns-sd",
+ "once_cell",
  "quinn",
  "rcgen",
  "rustls",

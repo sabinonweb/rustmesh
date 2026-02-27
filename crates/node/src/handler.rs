@@ -1,7 +1,7 @@
 use core::identity::{Identity, Peer};
 use quinn::Connection;
 
-pub async fn receive_handle_connection(connection: Connection, my_id: Identity) {
+pub async fn handle_incoming_connection(connection: Connection, my_id: Identity) {
     if let Ok((mut send, mut recv)) = connection.accept_bi().await {
         let mut buf = vec![0; 1024];
         if let Ok(n) = recv.read(&mut buf).await {
@@ -20,7 +20,7 @@ pub async fn receive_handle_connection(connection: Connection, my_id: Identity) 
     }
 }
 
-pub async fn send_handle_connection(connection: Connection, peer: Peer) -> anyhow::Result<()> {
+pub async fn handle_outgoing_connection(connection: Connection, peer: Peer) -> anyhow::Result<()> {
     let (mut send, mut recv) = connection.open_bi().await?;
     let message = format!("Hello from client {}", peer.id.peer_id());
 
