@@ -1,4 +1,5 @@
-use core::identity::Identity;
+use clap::Parser;
+use core::{args::Args, identity::Identity};
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use quinn::{Connection, Endpoint, ServerConfig, TransportConfig};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
@@ -12,7 +13,11 @@ fn register_service() -> Identity {
     let ip = "127.0.0.1"; // localhost
     let host_name = "localhost.local.";
     let port = 8080;
-    let properties = [("property_1", "test"), ("property_2", "1234")];
+    let properties = [
+        ("peer_id", peer_id.peer_id()),
+        ("property_1", "test".to_string()),
+        ("property_2", "1234".to_string()),
+    ];
 
     let my_service = ServiceInfo::new(
         service_type,
@@ -28,7 +33,6 @@ fn register_service() -> Identity {
         .expect("Failed to register the service");
 
     std::thread::sleep(std::time::Duration::from_secs(10));
-    mdns.shutdown().unwrap();
 
     peer_id
 }
@@ -53,8 +57,9 @@ fn configure_server() -> Result<(ServerConfig, Vec<u8>), Box<dyn Error>> {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let my_id = register_service();
+    let args = Args::parse();
     // let _ = rustls::crypto::ring::default_provider().install_default();
-    let address = "127.0.0.1:8080".parse()?;
+    let address = format!("{}:{}", args.ip, args.port).parse()?;
 
     let (server_config, _cert) = configure_server().unwrap();
 

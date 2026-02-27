@@ -8,3 +8,4 @@ ed25519-dalek = {version = "2", features=["rand_core"]}
 rand = "0.8"
 serde = { version = "1", features = ["derive"] }
 hex = "0.4"
+clap = { version = "4.5.60", features = ["derive"] }

@@ -3,6 +3,7 @@ use mdns_sd::{ServiceDaemon, ServiceEvent};
 use quinn::Endpoint;
 use rustls::pki_types::CertificateDer;
 use std::{
+    fmt::format,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -61,13 +62,16 @@ fn discover_services() -> Result<Peer, String> {
     let my_id = Identity::generate();
     let service_type = "_mdns-sd-my-test._udp.local.";
     let receiver = mdns.browse(service_type).expect("Failed to browse");
-    let result = Arc::new(Mutex::new(None));
+    let result: Arc<Mutex<Option<Result<Peer, String>>>> = Arc::new(Mutex::new(None));
     let result_clone = Arc::clone(&result);
 
     std::thread::spawn(move || {
         while let Ok(event) = receiver.recv() {
             if let ServiceEvent::ServiceResolved(resolved) = event {
                 println!("Resolved a full service: {}", resolved.fullname);
+                let peer_id = resolved.get_property_val_str("peer_id").unwrap();
+                println!("Service resolved from the peer: {:?}\n", peer_id);
+
                 if let Some(ip) = resolved.get_addresses().iter().next() {
                     let mut result = result_clone.lock().unwrap();
                     *result = Some(Ok(Peer {
@@ -83,9 +87,14 @@ fn discover_services() -> Result<Peer, String> {
         }
     });
     std::thread::sleep(Duration::from_secs(10));
-    mdns.shutdown().unwrap();
 
-    result.lock().unwrap().clone().unwrap()
+    match result.lock().unwrap().clone() {
+        Some(p) => Ok(p?),
+        None => {
+            println!("No service received!");
+            Err(format!("No service received!"))
+        }
+    }
 }
 
 #[tokio::main]
@@ -106,7 +115,8 @@ async fn main() -> anyhow::Result<()> {
     ));
     endpoint.set_default_client_config(client_config);
 
-    let server_addr = "127.0.0.1:8080".parse()?;
+    let server_addr = format!("{}:{}", peer.ip, peer.port).parse()?;
+    // let server_addr = "127.0.0.1:8080".parse()?;
     println!("Connecting to {}...", server_addr);
 
     let connection = endpoint.connect(server_addr, "localhost")?.await?;
@@ -118,9 +128,18 @@ async fn main() -> anyhow::Result<()> {
     send.write_all(message.as_bytes()).await?;
 
     let mut buf = vec![0; 1024];
-    let n = recv.read(&mut buf).await.unwrap().unwrap();
-    let reply = String::from_utf8_lossy(&buf[..n]);
-    println!("Reply: {:?}", reply);
+    match recv.read(&mut buf).await {
+        Ok(Some(n)) => {
+            let reply = String::from_utf8_lossy(&buf[..n]);
+            println!("Reply: {:?}", reply);
+        }
+        Ok(None) => {
+            println!("Stream closed by server");
+        }
+        Err(e) => {
+            println!("Error reading from stream: {}", e);
+        }
+    }
 
     Ok(())
 }
