@@ -231,6 +231,7 @@ dependencies = [
  "quinn",
  "rand 0.8.5",
  "serde",
+ "sha2",
 ]
 
 [[package]]
@@ -610,6 +611,7 @@ dependencies = [
  "anyhow",
  "clap",
  "core",
+ "ed25519-dalek",
  "mdns-sd",
  "once_cell",
  "quinn",
@@ -617,6 +619,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
+ "sha2",
  "tokio",
 ]
 

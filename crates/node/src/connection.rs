@@ -1,3 +1,4 @@
+use crate::handler::handle_outgoing_connection;
 use crate::{
     config::configure_server, discover::discover_services, handler::handle_incoming_connection,
     register::register_service, skip::SkipServerVerification,
@@ -8,11 +9,9 @@ use core::identity::PeerTable;
 use quinn::Endpoint;
 use std::sync::Arc;
 
-pub async fn connect_to_peer(peer_table: PeerTable) -> anyhow::Result<quinn::Connection> {
-    let mut peer = discover_services(peer_table).expect("Failed to retrive peer");
+pub async fn connect_to_peer() -> anyhow::Result<quinn::Connection> {
+    let peer = discover_services().expect("Failed to retrive peer");
     let _ = rustls::crypto::ring::default_provider().install_default();
-
-    println!("Client Peer ID: {}", peer.encode());
 
     let client_config = rustls::ClientConfig::builder()
         .dangerous()
@@ -30,7 +29,6 @@ pub async fn connect_to_peer(peer_table: PeerTable) -> anyhow::Result<quinn::Con
     println!("Connecting to {}...", server_addr);
 
     let connection = endpoint.connect(server_addr, "localhost")?.await?;
-    peer.connection = Some(connection);
     println!("Connected to {:?}", connection.remote_address());
     Ok(connection)
 }
@@ -55,7 +53,7 @@ pub async fn server() -> anyhow::Result<()> {
             match incoming.await {
                 Ok(connection) => {
                     println!("Connection established: {:?}", connection.remote_address());
-                    tokio::spawn(receive_handle_connection(connection, value.clone()));
+                    tokio::spawn(handle_incoming_connection(connection, value.clone()));
                 }
                 Err(e) => {
                     eprintln!("Connection error: {:?}", e);

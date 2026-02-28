@@ -18,9 +18,9 @@ pub fn discover_services() -> Result<Peer, String> {
         while let Ok(event) = receiver.recv() {
             if let ServiceEvent::ServiceResolved(resolved) = event {
                 println!("Resolved a full service: {}", resolved.fullname);
-                let peer: Peer = resolved.get_property_val_str("peer").unwrap().into();
+                let peer: Peer = resolved.get_property_val_str("peer").into();
                 println!("Service resolved from the peer: {:?}\n", peer);
-                let peer_identity = Identity::identity(peer.id.to_string());
+                let peer_identity = Identity::identity(peer.id.encode());
 
                 if peer_identity == my_id {
                     continue;
@@ -31,10 +31,9 @@ pub fn discover_services() -> Result<Peer, String> {
                 if let Some(ip) = resolved.get_addresses().iter().next() {
                     let mut result = result_clone.lock().unwrap();
                     *result = Some(Ok(Peer {
-                        id: my_id.clone().encode(),
+                        id: my_id.clone(),
                         ip: ip.to_string(),
                         port: resolved.port,
-                        connection: None,
                     }));
                     break; // stop after first resolved peer
                 }

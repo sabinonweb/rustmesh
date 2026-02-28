@@ -1,4 +1,4 @@
-use core::identity::Identity;
+use core::identity::{Identity, Peer};
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 
 pub fn register_service() -> Identity {
@@ -12,17 +12,16 @@ pub fn register_service() -> Identity {
         id: peer_id,
         ip,
         port,
-        connection: None,
     };
     let properties = [
-        ("peer", peer),
+        ("peer", serde_json::to_string(&peer).unwrap()),
         ("property_1", "test".to_string()),
         ("property_2", "1234".to_string()),
     ];
 
     let my_service = ServiceInfo::new(
         service_type,
-        &peer_id.peer_id()[..10],
+        &peer_id.encode()[..10],
         host_name,
         ip,
         port,

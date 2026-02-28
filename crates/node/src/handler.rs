@@ -9,7 +9,7 @@ pub async fn handle_incoming_connection(connection: Connection, my_id: Identity)
             let message = String::from_utf8_lossy(&buf[..n]);
             println!("Message from client: {:?}", message);
 
-            let reply = format!("{} says hello to you!", my_id.peer_id());
+            let reply = format!("{} says hello to you!", my_id.encode());
             let _ = send.write_all(reply.as_bytes()).await;
 
             let mut buf = vec![0; 1024];
@@ -22,7 +22,7 @@ pub async fn handle_incoming_connection(connection: Connection, my_id: Identity)
 
 pub async fn handle_outgoing_connection(connection: Connection, peer: Peer) -> anyhow::Result<()> {
     let (mut send, mut recv) = connection.open_bi().await?;
-    let message = format!("Hello from client {}", peer.id.peer_id());
+    let message = format!("Hello from client {}", peer.id);
 
     send.write_all(message.as_bytes()).await?;
 
