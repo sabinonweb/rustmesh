@@ -10,7 +10,7 @@ pub fn register_service() -> Identity {
     let port = 8080;
     let peer = Peer {
         id: peer_id,
-        ip,
+        ip: ip.to_string(),
         port,
     };
     let properties = [

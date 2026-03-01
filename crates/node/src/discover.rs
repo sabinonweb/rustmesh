@@ -20,7 +20,7 @@ pub fn discover_services() -> Result<Peer, String> {
                 println!("Resolved a full service: {}", resolved.fullname);
                 let peer: Peer = resolved.get_property_val_str("peer").into();
                 println!("Service resolved from the peer: {:?}\n", peer);
-                let peer_identity = Identity::identity(peer.id.encode());
+                let peer_identity = peer.id;
 
                 if peer_identity == my_id {
                     continue;
