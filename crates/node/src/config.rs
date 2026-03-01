@@ -1,4 +1,4 @@
-use crate::GLOBAL_PEER_TABLE;
+// use crate::GLOBAL_PEER_TABLE;
 use core::identity::Peer;
 use quinn::Endpoint;
 use quinn::{ServerConfig, TransportConfig};

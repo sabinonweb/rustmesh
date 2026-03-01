@@ -9,14 +9,14 @@ pub fn register_service() -> Identity {
     let host_name = "localhost.local.";
     let port = 8080;
     let peer = Peer {
-        id: peer_id,
+        id: peer_id.clone().encode(),
         ip: ip.to_string(),
         port,
     };
     let properties = [
-        ("peer", serde_json::to_string(&peer).unwrap()),
-        ("property_1", "test".to_string()),
-        ("property_2", "1234".to_string()),
+        ("peer_id", peer.id),
+        ("peer_ip", ip.to_string()),
+        ("peer_port", port.to_string()),
     ];
 
     let my_service = ServiceInfo::new(

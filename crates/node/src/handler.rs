@@ -22,7 +22,7 @@ pub async fn handle_incoming_connection(connection: Connection, my_id: Identity)
 
 pub async fn handle_outgoing_connection(connection: Connection, peer: Peer) -> anyhow::Result<()> {
     let (mut send, mut recv) = connection.open_bi().await?;
-    let message = format!("Hello from client {}", peer.id);
+    let message = format!("Hello from client {:?}", peer.id);
 
     send.write_all(message.as_bytes()).await?;
 

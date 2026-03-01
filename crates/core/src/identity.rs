@@ -34,7 +34,7 @@ impl Identity {
 
 #[derive(Clone, Debug)]
 pub struct Peer {
-    pub id: Identity,
+    pub id: String,
     pub ip: String,
     pub port: u16,
 }
@@ -42,11 +42,11 @@ pub struct Peer {
 impl Peer {
     pub fn new(ip: &str, port: u16) -> Peer {
         Peer {
-            id: Identity::generate(),
+            id: Identity::generate().encode(),
             ip: ip.to_string(),
             port,
         }
     }
 }
 
-pub type PeerTable = Arc<Mutex<HashMap<String, Peer>>>;
+pub type PeerTable = Arc<Mutex<HashMap<Identity, Peer>>>;
