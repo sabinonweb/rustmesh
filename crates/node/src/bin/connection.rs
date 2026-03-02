@@ -1,16 +1,14 @@
-use crate::handler::handle_outgoing_connection;
-use crate::{
-    config::configure_server, discover::discover_services, handler::handle_incoming_connection,
-    register::register_service, skip::SkipServerVerification,
-};
 use clap::Parser;
 use core::args::Args;
 use core::identity::PeerTable;
+use node::discover::discover_services;
+use node::handler::handle_outgoing_connection;
+use node::skip::SkipServerVerification;
 use quinn::Endpoint;
 use std::sync::Arc;
 
 #[tokio::main]
-pub async fn main() -> anyhow::Result<quinn::Connection> {
+pub async fn main() -> anyhow::Result<()> {
     let peer = discover_services().expect("Failed to retrive peer");
     let _ = rustls::crypto::ring::default_provider().install_default();
 
@@ -29,7 +27,16 @@ pub async fn main() -> anyhow::Result<quinn::Connection> {
     // let server_addr = "127.0.0.1:8080".parse()?;
     println!("Connecting to {}...", server_addr);
 
-    let connection = endpoint.connect(server_addr, "localhost")?.await?;
-    println!("Connected to {:?}", connection.remote_address());
-    Ok(connection)
+    match endpoint.connect(server_addr, "localhost")?.await {
+        Ok(connection) => {
+            println!("Connection established: {:?}", connection.remote_address());
+
+            tokio::spawn(handle_outgoing_connection(connection, peer));
+        }
+        Err(e) => {
+            eprintln!("Connection error: {:?}", e);
+        }
+    }
+
+    Ok(())
 }

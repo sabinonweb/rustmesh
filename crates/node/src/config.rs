@@ -16,6 +16,7 @@ pub fn configure_server() -> Result<(ServerConfig, Vec<u8>), Box<dyn Error>> {
 
     let mut transport_config = TransportConfig::default();
     transport_config.max_idle_timeout(Some(std::time::Duration::from_secs(60).try_into()?));
+    transport_config.keep_alive_interval(Some(std::time::Duration::from_secs(20)));
     let transport_config = Arc::new(transport_config);
 
     let mut config = ServerConfig::with_single_cert(vec![certificate], private_key)?;
