@@ -25,5 +25,6 @@ use std::{
 pub mod config;
 pub mod discover;
 pub mod handler;
+pub mod prelim;
 pub mod register;
 pub mod skip;
