@@ -1,4 +1,4 @@
-use core::identity::{Peer, PeerTable};
+use core_mesh::identity::{Peer, PeerTable};
 use once_cell::sync::Lazy;
 use std::{
     collections::HashMap,

@@ -1,4 +1,4 @@
-use core::identity::{Identity, Peer};
+use core_mesh::identity::{Identity, Peer};
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 
 pub fn register_service() -> Identity {

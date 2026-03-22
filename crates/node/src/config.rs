@@ -1,5 +1,5 @@
 // use crate::GLOBAL_PEER_TABLE;
-use core::identity::Peer;
+use core_mesh::identity::Peer;
 use quinn::Endpoint;
 use quinn::{ServerConfig, TransportConfig};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};

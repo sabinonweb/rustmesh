@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-core = { path = "../../crates/core" }
+core_mesh = { path = "../../crates/core_mesh" }
 quinn = "0.11"
 tokio = { version = "1", features = ["full"] }
 rustls = { version = "0.23", features = ["ring"] }

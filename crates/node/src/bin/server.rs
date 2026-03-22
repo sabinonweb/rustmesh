@@ -1,5 +1,5 @@
 use clap::Parser;
-use core::args::Args;
+use core_mesh::args::Args;
 use node::{
     config::configure_server, handler::handle_incoming_connection, register::register_service,
 };

@@ -1,4 +1,4 @@
-use core::identity::Identity;
+use core_mesh::identity::Identity;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use serde::{Deserialize, Serialize};
 
@@ -29,7 +29,7 @@ fn main() {
     let peer_str = serde_json::to_string(&Peer::new(&ip, port)).unwrap();
     let instance_name = &peer_str.clone()[..8];
 
-    // metadata of the service
+    // metadata of te service
     let properties = [("peer_id", peer_str)];
 
     let my_service = ServiceInfo::new(

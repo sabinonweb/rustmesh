@@ -1,4 +1,4 @@
-use core::identity::{Identity, Peer, PeerTable};
+use core_mesh::identity::{Identity, Peer, PeerTable};
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use std::{
     sync::{Arc, Mutex},

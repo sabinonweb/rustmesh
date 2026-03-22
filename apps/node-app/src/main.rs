@@ -1,5 +1,5 @@
 use anyhow::Result;
-use core::identity::Identity;
+use core_mesh::identity::Identity;
 use quinn::{Endpoint, ServerConfig};
 use rcgen::generate_simple_self_signed;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};

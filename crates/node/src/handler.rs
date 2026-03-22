@@ -1,4 +1,4 @@
-use core::identity::{Identity, Peer};
+use core_mesh::identity::{Identity, Peer};
 use quinn::Connection;
 
 // receive message

@@ -1,6 +1,6 @@
 use clap::Parser;
-use core::args::Args;
-use core::identity::PeerTable;
+use core_mesh::args::Args;
+use core_mesh::identity::PeerTable;
 use node::discover::discover_services;
 use node::handler::handle_outgoing_connection;
 use node::skip::SkipServerVerification;

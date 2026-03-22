@@ -1,4 +1,4 @@
-use core::identity::Identity;
+use core_mesh::identity::Identity;
 
 fn main() {
     let id = Identity::generate();
