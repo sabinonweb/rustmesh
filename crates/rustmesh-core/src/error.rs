@@ -30,8 +30,6 @@ pub enum RustMeshError {
     InvalidState(String),
 }
 
-pub type Result<T> = std::result::Result<T, RustMeshError>;
-
 #[cfg(test)]
 mod tests {
     use super::*;

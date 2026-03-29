@@ -1,4 +1,9 @@
+use crate::error::RustMeshError;
+
 pub mod error;
+pub mod message;
+
+pub type Result<T> = std::result::Result<T, RustMeshError>;
 
 pub fn init_tracing(level: &str) {
     use tracing_subscriber::fmt;

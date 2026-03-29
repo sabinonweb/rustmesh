@@ -12,6 +12,7 @@ wincode = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 bytes = { workspace = true }
 hex = { workspace = true }
 chrono = { workspace = true }
