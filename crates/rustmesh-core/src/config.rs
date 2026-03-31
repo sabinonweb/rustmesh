@@ -1,5 +1,6 @@
 use libp2p::Multiaddr;
 use serde::{Deserialize, Serialize};
+use std::{fs, path::Path};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct NodeConfig {
@@ -66,14 +67,17 @@ impl NodeConfig {
         }
     }
 
-    pub with_addr(mut self, addr: &str) -> Self {
+    pub fn with_addr(mut self, addr: &str) -> Self {
         self.listen_addr = addr.parse().expect("Invalid Multiaddr");
 
         self
     }
 
     pub fn with_bootstrap_nodes(mut self, peers: Vec<&str>) -> Self {
-        self.bootstrap_nodes = peers.into_iter().map(|p| p.parse().expect("Invalid Multiaddr")).collect();
+        self.bootstrap_nodes = peers
+            .into_iter()
+            .map(|p| p.parse().expect("Invalid Multiaddr"))
+            .collect();
 
         self
     }
@@ -84,13 +88,21 @@ impl NodeConfig {
         self
     }
 
-    pub fn set_enable_ble(mut self) -> self {
-        self.ble = true;
+    pub fn set_enable_ble(mut self) -> Self {
+        self.enable_ble = true;
         self
     }
 
-    pub fn disable_dht(mut self) -> self {
+    pub fn disable_dht(mut self) -> Self {
         self.enable_dht = false;
         self
+    }
+
+    pub fn from_file<P: AsRef<Path>>(path: P) -> crate::Result<Self> {
+        let contents =
+            fs::read_to_string(path).map_err(|e| crate::RustMeshError::FileError(e.to_string()))?;
+        let config: NodeConfig = toml::from_str(&contents)
+            .map_err(|e| crate::RustMeshError::Deserialization(e.to_string()))?;
+        Ok(config)
     }
 }
