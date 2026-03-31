@@ -1,35 +1,47 @@
 use serde::{Deserialize, Serialize};
+use wincode::{SchemaRead, SchemaWrite};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, SchemaRead, SchemaWrite, Debug)]
+pub struct PublishPayload {
+    pub topic: String,
+    pub data: Vec<u8>,
+    #[serde(default)]
+    pub timestamp: u64,
+}
+
+#[derive(Deserialize, Serialize, SchemaRead, SchemaWrite, Debug)]
+pub struct SubscribePayload {
+    pub topic: String,
+}
+
+#[derive(Deserialize, Serialize, SchemaRead, SchemaWrite, Debug)]
+pub struct RequestPayload {
+    pub request_id: u32,
+    pub method: String,
+    pub params: Vec<u8>,
+}
+
+#[derive(Deserialize, Serialize, SchemaRead, SchemaWrite, Debug)]
+pub struct ResponsePayload {
+    pub request_id: u32,
+    pub result: Vec<u8>,
+    pub error: String,
+}
+
+#[derive(Deserialize, Serialize, SchemaRead, SchemaWrite, Debug)]
+pub struct BenchmarkPayload {
+    pub id: u32,
+    pub timestamp: u64,
+    pub payload: Vec<u8>,
+}
+
+#[derive(Deserialize, Serialize, SchemaRead, SchemaWrite, Debug)]
 pub enum Message {
-    Publish {
-        topic: String,
-        data: Vec<u8>,
-        #[serde(default)]
-        timestamp: u64,
-    },
-
-    Subscribe {
-        topic: String,
-    },
-
-    Request {
-        request_id: u32,
-        method: String,
-        params: Vec<u8>,
-    },
-
-    Response {
-        request_id: u32,
-        result: Vec<u8>,
-        error: Option<String>,
-    },
-
-    Benchmark {
-        id: u32,
-        timestamp: u64,
-        payload: Vec<u8>,
-    },
+    Publish(PublishPayload),
+    Subscribe(SubscribePayload),
+    Request(RequestPayload),
+    Response(ResponsePayload),
+    Benchmark(BenchmarkPayload),
 }
 
 impl Message {
@@ -58,17 +70,21 @@ mod tests {
 
     #[test]
     fn test_message_serialization() {
-        let msg = Message::Publish {
+        let msg = Message::Publish(PublishPayload {
             topic: "test".to_string(),
             data: vec![1, 2, 3],
             timestamp: 123456789,
-        };
+        });
 
         let result = msg.to_bytes().unwrap();
-        let deserialized = Message::from_bytes(&bytes).unwrap();
-        
+        let deserialized = Message::from_bytes(&result).unwrap();
+
         match deserialized {
-            Message::Publish { topic, data, timestamp } => {
+            Message::Publish(PublishPayload {
+                topic,
+                data,
+                timestamp,
+            }) => {
                 assert_eq!(topic, "test");
                 assert_eq!(data, vec![1, 2, 3]);
                 assert_eq!(timestamp, 123456789);
@@ -77,13 +93,14 @@ mod tests {
         }
     }
 
-    #[test] 
+    #[test]
     fn test_message_name() {
-        let msg = Message::Publish {
+        let msg = Message::Publish(PublishPayload {
             topic: "test".to_string(),
             data: vec![1, 2, 3],
             timestamp: 123456789,
-        };
+        });
 
         assert_eq!(msg.type_name(), "Publish");
     }
+}

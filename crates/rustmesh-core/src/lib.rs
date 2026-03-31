@@ -1,5 +1,7 @@
 use crate::error::RustMeshError;
 
+pub mod behaviour;
+pub mod config;
 pub mod error;
 pub mod message;
 

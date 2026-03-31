@@ -28,6 +28,9 @@ pub enum RustMeshError {
 
     #[error("Invalid State Error: {0}")]
     InvalidState(String),
+
+    #[error("File Error: {0}")]
+    FileError(String),
 }
 
 #[cfg(test)]
