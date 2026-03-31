@@ -1,4 +1,5 @@
-use libp2p::{gossipsub, identify, kad, swarm::NetworkBehaviour};
+use crate::config::NodeConfig;
+use libp2p::{gossipsub, identify, kad, swarm::NetworkBehaviour, PeerId};
 
 #[derive(NetworkBehaviour)]
 #[behaviour(out_event = "RustMeshEvent")]
@@ -28,8 +29,16 @@ impl From<identify::Event> for RustMeshEvent {
     }
 }
 
-impl From<kad::Event> for RustMeshEvent {
+impl From<kad::Event> for RustMeshEvent { 
     fn from(event: kad::Event) -> Self {
         RustMeshEvent::Kademlia(event)
+    }
+}
+
+impl RustMeshBehaviour {
+    pub fn new(config: NodeConfig, local_peer_id: PeerId) -> crate::Result<Self> {
+        info!("Initializing RustMesh: {}", config.name);
+
+        let gossipsub_config = gossipsub::ConfigBuilder::default()
     }
 }
