@@ -106,3 +106,44 @@ impl NodeConfig {
         Ok(config)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default() {
+        let node_config = NodeConfig::default();
+
+        assert!(!node_config.name.is_empty());
+        assert!(node_config.enable_quic);
+        assert!(node_config.listen_addr.to_string().contains("quic"));
+    }
+
+    #[test]
+    fn test_new() {
+        let node_config = NodeConfig::new("onweb-node".to_string());
+
+        assert_eq!(node_config.name, "onweb-node");
+        assert!(node_config.enable_quic);
+    }
+
+    #[test]
+    fn test_with_topics() {
+        let node_config =
+            NodeConfig::new("test-node".to_string()).with_topics(vec!["topic1", "topic2"]);
+
+        assert_eq!(node_config.topics.len(), 2);
+    }
+
+    #[test]
+    fn test_bootstrap() {
+        let config = NodeConfig::new("test-node".to_string())
+            .with_bootstrap_nodes(vec!["/ip4/0.0.0.0/udp/01/quic-v1"]);
+
+        assert_eq!(
+            config.bootstrap_nodes,
+            vec!["/ip4/0.0.0.0/udp/01/quic-v1".parse().unwrap()]
+        );
+    }
+}
