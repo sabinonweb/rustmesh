@@ -26,7 +26,7 @@ pub struct NodeConfig {
 
     pub log_level: String,
 
-    pub gossipsub_heartbeart_ms: u64,
+    pub gossipsub_heartbeat_ms: u64,
 
     pub max_message_size: usize,
 
@@ -51,7 +51,7 @@ impl Default for NodeConfig {
             key_path: None,
             enable_mdns: true,
             log_level: "info".to_string(),
-            gossipsub_heartbeart_ms: 500,
+            gossipsub_heartbeat_ms: 500,
             max_message_size: 262144,
             metrics_port: 9090,
             data_dir: "/data".to_string(),
