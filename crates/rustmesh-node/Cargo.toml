@@ -4,18 +4,17 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 
+[[bin]]
+name = "rustmesh-node"
+path = "src/main.rs"
+
 [dependencies]
+rustmesh-core = { path = "../rustmesh-core" }
 tokio = { workspace = true }
 libp2p = { workspace = true }
-serde = { workspace = true }
-wincode = { workspace = true }
-thiserror = { workspace = true }
-anyhow = { workspace = true }
 tracing = { workspace = true }
-bytes = { workspace = true }
-hex = { workspace = true }
-chrono = { workspace = true }
-rand = { workspace = true }
+anyhow = { workspace = true }
+clap = { version = "4.4", features = ["derive"] }
 
 [dev-dependencies]
 tokio-test = "0.4"

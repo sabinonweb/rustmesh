@@ -21,7 +21,7 @@ pub enum RustMeshError {
     Timeout,
 
     #[error("Configuration Error: {0}")]
-    Configuration(String),
+    ConfigError(String),
 
     #[error("Not Found Error: {0}")]
     NotFound(String),
