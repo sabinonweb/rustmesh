@@ -1,8 +1,7 @@
 use crate::{behaviour::RustMeshBehaviour, config::NodeConfig, error::RustMeshError};
 use clap::Parser;
-use libp2p::futures::StreamExt;
-use libp2p::{identity, quic, swarm::SwarmEvent, Multiaddr, PeerId, SwarmBuilder};
-use rustmesh_core::{behaviour::RustMeshEvent, *};
+use libp2p::{identity, quic, Multiaddr, PeerId, SwarmBuilder};
+use rustmesh_core::*;
 use tracing::info;
 
 #[derive(Parser, Debug, Clone)]
@@ -67,65 +66,9 @@ async fn main() -> Result<()> {
 
     loop {
         tokio::select! {
-            event = swarm.select_next_some() => {
-                handle_swarm_event(event, &args.name).await;
-            },
-            _ = tokio::time::sleep(std::time::Duration::from_secs(30)) => {
-            info!("Heartbeat from: {:?}", &args.name);
-        }
-
+            event = swar
         }
     }
-}
 
-async fn handle_swarm_event(event: SwarmEvent<RustMeshEvent>, node_name: &str) {
-    match event {
-        SwarmEvent::ListenerError { listener_id, .. } => {
-            info!("[{}] Listening on address {:?}", node_name, listener_id);
-        }
-
-        SwarmEvent::Dialing { connection_id, .. } => {
-            info!("[{}] Dialing {:?}", node_name, connection_id);
-        }
-
-        SwarmEvent::ConnectionEstablished {
-            peer_id,
-            endpoint,
-            num_established,
-            ..
-        } => {
-            info!(
-                "[{}] Connection established with {} ({}) [total: {}]",
-                node_name,
-                peer_id,
-                endpoint.get_remote_address(),
-                num_established
-            );
-        }
-
-        SwarmEvent::ConnectionClosed {
-            peer_id,
-            num_established,
-            cause,
-            ..
-        } => {
-            info!(
-                "[{}] Connection closed with {} [{:?}] [remaining: {}]",
-                node_name, peer_id, cause, num_established
-            );
-        }
-
-        SwarmEvent::IncomingConnection {
-            local_addr,
-            send_back_addr,
-            ..
-        } => {
-            info!(
-                "[{}] Incoming Connection from {} (local: {})",
-                node_name, send_back_addr, local_addr
-            );
-        }
-
-        _ => {}
-    }
+    Ok(())
 }
