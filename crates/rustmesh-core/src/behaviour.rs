@@ -1,7 +1,9 @@
+use std::time::Duration;
+
 use crate::{config::NodeConfig, error::RustMeshError};
 use libp2p::{
     gossipsub::{self, IdentTopic, MessageAuthenticity, ValidationMode},
-    identify, kad,
+    identify, kad, mdns,
     swarm::NetworkBehaviour,
     PeerId,
 };
@@ -15,12 +17,15 @@ pub struct RustMeshBehaviour {
     pub identify: identify::Behaviour,
 
     pub kademlia: kad::Behaviour<kad::store::MemoryStore>,
+
+    pub mdns: mdns::tokio::Behaviour,
 }
 
 pub enum RustMeshEvent {
     Gossipsub(gossipsub::Event),
     Identify(identify::Event),
     Kademlia(kad::Event),
+    Mdns(mdns::Event),
 }
 
 impl From<gossipsub::Event> for RustMeshEvent {
@@ -38,6 +43,12 @@ impl From<identify::Event> for RustMeshEvent {
 impl From<kad::Event> for RustMeshEvent {
     fn from(event: kad::Event) -> Self {
         RustMeshEvent::Kademlia(event)
+    }
+}
+
+impl From<mdns::Event> for RustMeshEvent {
+    fn from(event: mdns::Event) -> Self {
+        RustMeshEvent::Mdns(event)
     }
 }
 
@@ -80,10 +91,19 @@ impl RustMeshBehaviour {
             local_key.public(),
         ));
 
+        let mdns_config = mdns::Config {
+            ttl: Duration::from_secs(60),
+            query_interval: Duration::from_secs(5),
+            enable_ipv6: false,
+        };
+
+        let mdns = mdns::tokio::Behaviour::new(mdns_config, local_peer_id)?;
+
         let mut behaviour = Self {
             gossipsub,
             kademlia,
             identify,
+            mdns,
         };
 
         for topic in &config.topics {

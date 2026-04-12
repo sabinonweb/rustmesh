@@ -1,9 +1,13 @@
+use std::time::Duration;
+
 use crate::{behaviour::RustMeshBehaviour, config::NodeConfig, error::RustMeshError};
 use clap::Parser;
 use libp2p::futures::StreamExt;
-use libp2p::{identity, quic, swarm::SwarmEvent, Multiaddr, PeerId, SwarmBuilder};
+use libp2p::gossipsub::IdentTopic;
+use libp2p::Swarm;
+use libp2p::{identity, swarm::SwarmEvent, Multiaddr, PeerId, SwarmBuilder};
 use rustmesh_core::{behaviour::RustMeshEvent, *};
-use tracing::info;
+use tracing::{error, info};
 
 #[derive(Parser, Debug, Clone)]
 #[command(name = "RustMesh Node")]
@@ -15,7 +19,7 @@ struct Args {
     #[arg(short, long, default_value = "/ip4/0.0.0.0/udp/0/quic-v1")]
     listen: String,
 
-    #[arg(short, long, default_value = "info")]
+    #[arg(short = 'g', long, default_value = "info")]
     log_level: String,
 }
 
@@ -44,6 +48,7 @@ async fn main() -> Result<()> {
             RustMeshError::ConfigError(format!("Failed to create a behaviour: {:?}", e))
         })?;
 
+    // Swarm takes Transport, Behaviour and PeerId
     let mut swarm = SwarmBuilder::with_existing_identity(local_key)
         .with_tokio()
         .with_quic()
@@ -65,20 +70,36 @@ async fn main() -> Result<()> {
 
     info!("Node listening on {:?}", args.listen);
 
+    let mut publish_interval = tokio::time::interval(Duration::from_secs(2));
+
     loop {
         tokio::select! {
             event = swarm.select_next_some() => {
-                handle_swarm_event(event, &args.name).await;
+                handle_swarm_event(event, &args.name, &mut swarm).await;
             },
+
+            _ = publish_interval.tick() => {
+                let topic = IdentTopic::new("mesh/messages");
+                 let msg = format!("hello from {}", args.name);
+                 match swarm.behaviour_mut().gossipsub.publish(topic, msg.as_bytes().to_vec()) {
+                     Ok(_) => info!("[{}] Published: {}", args.name, msg),
+                    Err(e) => error!("[{}] Publish failed: {}", args.name, e),
+                 }
+            }
+
             _ = tokio::time::sleep(std::time::Duration::from_secs(30)) => {
             info!("Heartbeat from: {:?}", &args.name);
-        }
+            }
 
         }
     }
 }
 
-async fn handle_swarm_event(event: SwarmEvent<RustMeshEvent>, node_name: &str) {
+async fn handle_swarm_event(
+    event: SwarmEvent<RustMeshEvent>,
+    node_name: &str,
+    swarm: &mut Swarm<RustMeshBehaviour>,
+) {
     match event {
         SwarmEvent::ListenerError { listener_id, .. } => {
             info!("[{}] Listening on address {:?}", node_name, listener_id);
@@ -127,14 +148,25 @@ async fn handle_swarm_event(event: SwarmEvent<RustMeshEvent>, node_name: &str) {
         }
 
         SwarmEvent::Behaviour(event) => {
-            handle_behaviour_event(event, node_name);
+            handle_behaviour_event(event, node_name, swarm);
+        }
+
+        SwarmEvent::NewListenAddr {
+            listener_id,
+            address,
+        } => {
+            info!("[{}] {} Listening on {}", node_name, listener_id, address);
         }
 
         _ => {}
     }
 }
 
-fn handle_behaviour_event(event: RustMeshEvent, node_name: &str) {
+fn handle_behaviour_event(
+    event: RustMeshEvent,
+    node_name: &str,
+    swarm: &mut Swarm<RustMeshBehaviour>,
+) {
     match event {
         RustMeshEvent::Gossipsub(gs_event) => match gs_event {
             libp2p::gossipsub::Event::Message {
@@ -184,6 +216,38 @@ fn handle_behaviour_event(event: RustMeshEvent, node_name: &str) {
             }
 
             _ => {}
+        },
+
+        RustMeshEvent::Mdns(mdns_event) => match mdns_event {
+            libp2p::mdns::Event::Discovered(peer) => {
+                for (_, (peer_id, multiaddr)) in peer.iter().enumerate() {
+                    info!(
+                        "[{}] Discovered peer {} [{}]",
+                        node_name, peer_id, multiaddr
+                    );
+
+                    swarm.behaviour_mut().gossipsub.add_explicit_peer(peer_id);
+
+                    if swarm.is_connected(peer_id) {
+                        info!("[{}] already connected to peer {}", node_name, peer_id);
+                    } else {
+                        match swarm.dial(*peer_id) {
+                            Ok(()) => info!("[{}] dialing {}", node_name, peer_id),
+                            Err(e) => error!(
+                                "[{}] error while dialing {}: {}",
+                                node_name,
+                                peer_id,
+                                e.to_string()
+                            ),
+                        }
+                    }
+                }
+            }
+            libp2p::mdns::Event::Expired(peer) => {
+                for (_, (peer_id, multiaddr)) in peer.iter().enumerate() {
+                    info!("[{}] Expired peer {} [{}]", node_name, peer_id, multiaddr);
+                }
+            }
         },
     }
 }
