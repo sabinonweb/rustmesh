@@ -29,25 +29,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     init_tracing(&args.log_level);
-
-    let local_key = identity::Keypair::generate_ed25519();
-    let local_peer_id = PeerId::from_public_key(&local_key.public());
-
-    info!("Local Peer Address: {}", local_peer_id);
-
-    let node_config = NodeConfig::new(args.name.clone());
-
-    let behaviour =
-        RustMeshBehaviour::new(node_config, local_key.clone(), local_peer_id).map_err(|e| {
-            RustMeshError::ConfigError(format!("Error forming the behaviour: {}", e.to_string()))
-        })?;
-
-    let mut swarm = SwarmBuilder::with_existing_identity(local_key)
-        .with_tokio()
-        .with_quic()
-        .with_behaviour(|_| behaviour)
-        .unwrap()
-        .build();
+    let mut swarm = get_swarm(&args.name);
 
     let listen_addr: Multiaddr = args.listen.parse().unwrap();
 
@@ -57,29 +39,57 @@ async fn main() -> Result<()> {
 
     info!("[{}] Listening on {}", args.name, listen_addr);
 
+    event_loop(&mut swarm, &args.name).await;
+
+    Ok(())
+}
+
+async fn event_loop(swarm: &mut Swarm<RustMeshBehaviour>, node_name: &str) {
     let mut publish_interval = tokio::time::interval(Duration::from_secs(2));
 
     loop {
         tokio::select! {
             event = swarm.select_next_some() => {
-               handle_events(&args.name, event, &mut swarm).await;
+               handle_events(node_name, event, swarm).await;
            }
 
            _ = sleep(Duration::from_secs(30)) => {
-               info!("[{}] Heartbeat from {}", &args.name, &args.name);
+               info!("[{}] Heartbeat from {}", node_name, node_name);
            },
 
 
            _ = publish_interval.tick() => {
                 let topic = IdentTopic::new("mesh/messages");
-                let message = format!("Hello from [{}]", &args.name);
+                let message = format!("Hello from [{}]", node_name);
                 match swarm.behaviour_mut().gossipsub.publish(topic, message.as_bytes().to_vec()) {
-                     Ok(_) => info!("[{}] Published: {}", args.name, message),
-                    Err(e) => error!("[{}] Publish failed: {}", args.name, e),
+                     Ok(_) => info!("[{}] Published: {}", node_name, message),
+                    Err(e) => error!("[{}] Publish failed: {}", node_name, e),
                  }
            }
         }
     }
+}
+
+fn get_swarm(node_name: &str) -> Swarm<RustMeshBehaviour> {
+    let local_key = identity::Keypair::generate_ed25519();
+    let local_peer_id = PeerId::from_public_key(&local_key.public());
+
+    info!("Local Peer Address: {}", local_peer_id);
+
+    let node_config = NodeConfig::new(node_name.to_string());
+
+    let behaviour = RustMeshBehaviour::new(node_config, local_key.clone(), local_peer_id)
+        .map_err(|e| {
+            RustMeshError::ConfigError(format!("Error forming the behaviour: {}", e.to_string()))
+        })
+        .expect("Error forming the behaviour");
+
+    SwarmBuilder::with_existing_identity(local_key)
+        .with_tokio()
+        .with_quic()
+        .with_behaviour(|_| behaviour)
+        .unwrap()
+        .build()
 }
 
 async fn handle_events(
