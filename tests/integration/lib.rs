@@ -1,6 +1,6 @@
 pub mod three_nodes_gossipsub;
 
-use libp2p::{identity, quic, PeerId, Swarm, SwarmBuilder};
+use libp2p::{identity, PeerId, Swarm, SwarmBuilder};
 use rustmesh_core::{behaviour::RustMeshBehaviour, error::RustMeshError};
 
 pub async fn create_test_node(name: &str) -> (Swarm<RustMeshBehaviour>, PeerId) {

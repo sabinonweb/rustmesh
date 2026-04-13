@@ -1,8 +1,6 @@
-use std::{thread::sleep, time::Duration};
-
 use crate::create_test_nodes;
-use libp2p::Multiaddr;
-use rustmesh_core::{behaviour::RustMeshBehaviour, *};
+use rustmesh_core::*;
+use std::thread::sleep;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_three_nodes() {
@@ -22,6 +20,4 @@ async fn test_three_nodes() {
             .listen_on(id.parse().unwrap())
             .expect("Listen on failed!");
     }
-
-    sleep(Duration::from_secs(2));
 }
