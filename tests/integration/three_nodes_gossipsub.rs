@@ -1,5 +1,6 @@
 use crate::create_test_nodes;
 use rustmesh_core::*;
+use rustmesh_node::{event::event_loop, *};
 use std::thread::sleep;
 
 #[tokio::test(flavor = "multi_thread")]
@@ -19,5 +20,7 @@ async fn test_three_nodes() {
         swarm
             .listen_on(id.parse().unwrap())
             .expect("Listen on failed!");
+
+        event_loop(&mut swarm, &format!("node-{}", i)).await;
     }
 }

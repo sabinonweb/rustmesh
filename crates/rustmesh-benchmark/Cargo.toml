@@ -6,6 +6,7 @@ authors.workspace = true
 
 [dependencies]
 tokio = { workspace = true }
+clap = { version = "4.4", features = ["derive"] }
 libp2p = { workspace = true }
 serde = { workspace = true }
 wincode = { workspace = true }
@@ -16,7 +17,10 @@ bytes = { workspace = true }
 hex = { workspace = true }
 chrono = { workspace = true }
 rand = { workspace = true }
+futures = { workspace = true }
 tracing-subscriber = { workspace = true }
+rustmesh-core = { path = "../rustmesh-core" }
+rustmesh-node = { path = "../rustmesh-node/" }
 
 [dev-dependencies]
 tokio-test = "0.4"

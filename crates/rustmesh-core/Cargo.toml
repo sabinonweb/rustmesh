@@ -21,6 +21,7 @@ toml = { workspace = true }
 
 [dev-dependencies]
 tokio-test = "0.4"
+rustmesh-node = { path = "../rustmesh-node" }
 
 [[test]]
 name = "integration"
