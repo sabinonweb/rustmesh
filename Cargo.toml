@@ -18,6 +18,9 @@ repository = "https://github.com/sabinonweb/rustmesh"
 tokio = { version = "1.40", features = ["full"] }
 futures = "0.3"
 tokio-util = "0.7"
+bluer = { version = "0.17.4", features = ["full"] }
+btleplug = {version = "0.12.0", features = ["serde"]}
+
 
 # libp2p stack
 libp2p = { version = "0.53", features = ["full"]}

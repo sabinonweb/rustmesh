@@ -1,34 +1,44 @@
-use futures::stream::StreamExt;
-use libp2p::{
-    gossipsub::{self, IdentTopic},
-    identity,
-    swarm::{self, dial_opts, SwarmEvent},
-    Multiaddr, PeerId, SwarmBuilder,
+use btleplug::api::CentralEvent;
+use btleplug::api::{
+    bleuuid::uuid_from_u16, Central, Manager as _, Peripheral as _, ScanFilter, WriteType,
 };
-use rustmesh_core::{
-    behaviour::{RustMeshBehaviour, RustMeshEvent},
-    config::NodeConfig,
-    error::RustMeshError,
-    init_tracing, Result,
-};
-use rustmesh_node::event::{event_loop, get_swarm};
-use tracing::info;
+use btleplug::platform::Manager;
+use futures::StreamExt;
+use std::error::Error;
+use std::time::Duration;
+use wincode::containers::Box;
 
 #[tokio::main]
-async fn main() -> Result<()> {
-    init_tracing("debug");
+async fn main() {
+    let manager = Manager::new().await.unwrap();
 
-    let (mut swarm1, peer_id1) = get_swarm("bench1");
-    let (mut swarm2, peer_id2) = get_swarm("bench2");
+    // central of the BLE
+    let adapters = manager.adapters().await.expect("Couldn't find the central");
+    let central = adapters.into_iter().nth(0).unwrap();
 
-    let _ = swarm1.listen_on("/ip4/192.168.110.7/udp/9001/quic-v1".parse().unwrap());
-    let _ = swarm1.listen_on("/ip4/192.168.110.7/udp/9002/quic-v1".parse().unwrap());
+    central.start_scan(ScanFilter::default()).await.unwrap();
 
-    let _ = event_loop(&mut swarm1, "bench1");
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    let mut events = central.events().await.unwrap();
 
-    tokio::spawn(async move {
-        let _ = event_loop(&mut swarm2, "bench2");
-    });
+    while let Some(event) = events.next().await {
+        match event {
+            CentralEvent::DeviceDiscovered(id) => {
+                let peripheral = central.peripheral(&id).await.unwrap();
+                let properties = peripheral.properties().await.unwrap();
+                let name = properties
+                    .and_then(|p| p.local_name)
+                    .map(|local_name| format!("Name: {local_name}"))
+                    .unwrap_or_default();
 
-    Ok(())
+                println!("DeviceDiscovered: {:?} Name: {}", id, name);
+            }
+
+            CentralEvent::DeviceConnected(id) => {
+                println!("DeviceConnected: {:?}", id);
+            }
+
+            _ => {}
+        }
+    }
 }
