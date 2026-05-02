@@ -1,15 +1,13 @@
 use btleplug::api::CentralEvent;
-use btleplug::api::{
-    bleuuid::uuid_from_u16, Central, Manager as _, Peripheral as _, ScanFilter, WriteType,
-};
+use btleplug::api::{Central, Manager as _, Peripheral as _, ScanFilter};
 use btleplug::platform::Manager;
 use futures::StreamExt;
-use std::error::Error;
 use std::time::Duration;
-use wincode::containers::Box;
+use tracing::info;
 
 #[tokio::main]
 async fn main() {
+    info!("In the benchmark, here we are!");
     let manager = Manager::new().await.unwrap();
 
     // central of the BLE
@@ -36,6 +34,10 @@ async fn main() {
 
             CentralEvent::DeviceConnected(id) => {
                 println!("DeviceConnected: {:?}", id);
+            }
+
+            CentralEvent::ServiceDataAdvertisement { id, service_data } => {
+                let message = String::from_utf16_lossy(service_data)
             }
 
             _ => {}

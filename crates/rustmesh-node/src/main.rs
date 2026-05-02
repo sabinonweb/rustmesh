@@ -1,7 +1,10 @@
 use clap::Parser;
-use libp2p::Multiaddr;
-use rustmesh_core::{error::RustMeshError, init_tracing, Result};
-use rustmesh_node::event::{event_loop, get_swarm};
+use rustmesh_core::{
+    init_tracing,
+    transport::{quic::QuicTransport, Transport},
+    Result,
+};
+use rustmesh_node::event::event_loop;
 use tracing::info;
 
 #[derive(Parser, Debug, Clone)]
@@ -23,17 +26,12 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     init_tracing(&args.log_level);
-    let (mut swarm, _peer_id) = get_swarm(&args.name);
+    let mut transport = QuicTransport::new(&args.name);
+    transport.listen(&args.listen)?;
 
-    let listen_addr: Multiaddr = args.listen.parse().unwrap();
+    info!("[{}] Listening on {}", args.name, &args.listen);
 
-    swarm.listen_on(listen_addr.clone()).map_err(|e| {
-        RustMeshError::ConfigError(format!("Error while listening: {:?}", e.to_string()))
-    })?;
-
-    info!("[{}] Listening on {}", args.name, listen_addr);
-
-    event_loop(&mut swarm, &args.name).await;
+    event_loop(&mut transport.swarm, &args.name).await;
 
     Ok(())
 }

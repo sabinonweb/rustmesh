@@ -4,6 +4,7 @@ pub mod behaviour;
 pub mod config;
 pub mod error;
 pub mod message;
+pub mod transport;
 
 pub type Result<T> = std::result::Result<T, RustMeshError>;
 
