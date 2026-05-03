@@ -36,9 +36,7 @@ async fn main() {
                 println!("DeviceConnected: {:?}", id);
             }
 
-            CentralEvent::ServiceDataAdvertisement { id, service_data } => {
-                let message = String::from_utf16_lossy(service_data)
-            }
+            CentralEvent::ServiceDataAdvertisement { id, service_data } => {}
 
             _ => {}
         }

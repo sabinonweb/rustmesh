@@ -2,8 +2,10 @@ use crate::error::RustMeshError;
 
 pub mod behaviour;
 pub mod config;
+pub mod discovery;
 pub mod error;
 pub mod message;
+pub mod messaging;
 pub mod transport;
 
 pub type Result<T> = std::result::Result<T, RustMeshError>;

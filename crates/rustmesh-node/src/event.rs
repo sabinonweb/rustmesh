@@ -1,11 +1,11 @@
+use crate::handler::handle_events;
 use libp2p::futures::StreamExt;
 use libp2p::{gossipsub::IdentTopic, Swarm};
 use rustmesh_core::behaviour::RustMeshBehaviour;
+use rustmesh_core::discovery::RustMeshDiscovery;
 use std::time::Duration;
 use tokio::time::sleep;
 use tracing::{error, info};
-
-use crate::handler::handle_events;
 
 pub async fn event_loop(swarm: &mut Swarm<RustMeshBehaviour>, node_name: &str) {
     let mut publish_interval = tokio::time::interval(Duration::from_secs(2));
@@ -32,3 +32,6 @@ pub async fn event_loop(swarm: &mut Swarm<RustMeshBehaviour>, node_name: &str) {
         }
     }
 }
+
+// maile events ma chai like discovery, tranport hyan tyan halne and mapping it from that maybe idk
+// how much it is possible

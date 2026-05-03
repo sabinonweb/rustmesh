@@ -1,5 +1,6 @@
 use clap::Parser;
 use rustmesh_core::{
+    discovery::{wifi::WifiDiscovery, RustMeshDiscovery},
     init_tracing,
     transport::{quic::QuicTransport, Transport},
     Result,
